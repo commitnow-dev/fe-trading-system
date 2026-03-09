@@ -30,5 +30,3 @@ void i18n
       lookupLocalStorage: "app-language",
     },
   });
-
-export default i18n;

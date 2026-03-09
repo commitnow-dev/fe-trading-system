@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const isCI = Boolean(process.env.CI);
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -17,8 +19,10 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chrome",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      name: isCI ? "chromium" : "chrome",
+      use: isCI
+        ? { ...devices["Desktop Chrome"] }
+        : { ...devices["Desktop Chrome"], channel: "chrome" },
     },
   ],
   webServer: {

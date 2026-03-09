@@ -126,7 +126,9 @@ pnpm build
 
 - CI: `.github/workflows/ci.yml`
   - 트리거: 모든 브랜치 push, PR
-  - 단계: `lint` → `format` → `typecheck` → `knip` → `test` → `build`
+  - 병렬 Job:
+    - `quality`: `lint` → `format` → `typecheck` → `knip` → `test` → `build`
+    - `e2e`: Playwright 설치 후 `test:e2e`
 - CD: `.github/workflows/cd.yml`
   - 트리거: `release-*` 태그 push (예: `release-dev`, `release-staging`, `release-prod`)
   - 단계:

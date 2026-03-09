@@ -20,8 +20,8 @@
     "knip": "knip",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier . --check --config ../.prettier.config.ts",
-    "format:write": "prettier . --write --config ../.prettier.config.ts",
+    "format": "prettier . --check --config ./.prettier.config.ts",
+    "format:write": "prettier . --write --config ./.prettier.config.ts",
     "generate:api-types": "openapi-typescript ./src/shared/api/openapi/orderbook.openapi.yaml -o ./src/shared/api/openapi/schema.ts",
     "prepare": "husky",
     "lint-staged": "lint-staged"
@@ -80,10 +80,10 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --max-warnings=0 --fix",
-      "prettier --write --config ../.prettier.config.ts"
+      "prettier --write --config ./.prettier.config.ts"
     ],
     "*.{js,json,md,css,html,yml,yaml}": [
-      "prettier --write --config ../.prettier.config.ts"
+      "prettier --write --config ./.prettier.config.ts"
     ]
   }
 }

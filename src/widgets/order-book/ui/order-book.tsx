@@ -1,6 +1,20 @@
 import type { ReactElement } from "react";
+import { useMemo } from "react";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  type ColDef,
+  type RowClickedEvent,
+} from "ag-grid-community";
+import { AgGridReact } from "ag-grid-react";
+
 import type { OrderItem } from "@/entities/orderbook";
 import { formatNumber } from "@/shared/lib/number-format";
+
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface OrderBookProps {
   items: OrderItem[];
@@ -12,40 +26,80 @@ function typeToLabel(type: OrderItem["type"]): string {
 }
 
 export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElement {
+  const columnDefs = useMemo<ColDef<OrderItem>[]>(
+    () => [
+      {
+        headerName: "유형",
+        field: "type",
+        width: 120,
+        minWidth: 120,
+        maxWidth: 120,
+        valueFormatter: (params) => typeToLabel(params.value as OrderItem["type"]),
+        cellClass: (params) =>
+          params.data?.type === "buy"
+            ? "orderbook-cell-type-buy"
+            : "orderbook-cell-type-sell",
+      },
+      {
+        headerName: "가격",
+        field: "price",
+        flex: 1,
+        valueFormatter: (params) => formatNumber(Number(params.value ?? 0)),
+        cellClass: (params) =>
+          params.data?.type === "buy"
+            ? "orderbook-cell-price-buy"
+            : "orderbook-cell-price-sell",
+      },
+      {
+        headerName: "잔량",
+        field: "quantity",
+        width: 120,
+        minWidth: 120,
+        maxWidth: 120,
+        valueFormatter: (params) => formatNumber(Number(params.value ?? 0)),
+      },
+    ],
+    [],
+  );
+
+  const defaultColDef = useMemo<ColDef<OrderItem>>(
+    () => ({
+      sortable: false,
+      filter: false,
+      suppressMovable: true,
+    }),
+    [],
+  );
+
+  const handleRowClick = (event: RowClickedEvent<OrderItem>): void => {
+    if (!event.data) {
+      return;
+    }
+
+    onSelectPrice(event.data.price);
+  };
+
   return (
     <section
-      className="mx-auto w-full max-w-[680px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border-default)] bg-[var(--color-bg-surface)]"
+      className="mx-auto flex h-full w-full max-w-[680px] flex-col overflow-hidden"
       aria-label="실시간 호가창"
     >
-      <header className="grid grid-cols-[120px_1fr_120px] bg-[var(--color-bg-page)] px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-        <span>유형</span>
-        <span>가격</span>
-        <span>잔량</span>
-      </header>
-      <ul className="m-0 list-none p-0">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            className="border-t border-[var(--color-border-muted)] first:border-t-0"
-          >
-            <button
-              type="button"
-              className="grid w-full grid-cols-[120px_1fr_120px] items-center bg-transparent px-4 py-3 text-left hover:bg-[var(--color-bg-page)]"
-              onClick={() => {
-                onSelectPrice(item.price);
-              }}
-            >
-              <span
-                className={`font-semibold ${item.type === "buy" ? "text-[var(--color-buy)]" : "text-[var(--color-sell)]"}`}
-              >
-                {typeToLabel(item.type)}
-              </span>
-              <span>{formatNumber(item.price)}</span>
-              <span>{formatNumber(item.quantity)}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="ag-theme-quartz orderbook-grid-theme h-full w-full">
+        <AgGridReact<OrderItem>
+          rowData={items}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          getRowId={(params) => params.data.id}
+          animateRows={true}
+          rowHeight={48}
+          headerHeight={48}
+          suppressRowHoverHighlight={false}
+          getRowClass={(params) =>
+            params.data?.type === "buy" ? "orderbook-row-buy" : "orderbook-row-sell"
+          }
+          onRowClicked={handleRowClick}
+        />
+      </div>
     </section>
   );
 }

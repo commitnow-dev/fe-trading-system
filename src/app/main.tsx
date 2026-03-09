@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import { QueryProvider } from "./providers/query-provider";
+import { ThemeProvider } from "./providers/theme-provider";
 import { AppRouter } from "./router";
 import "./styles/global.css";
 
@@ -19,9 +20,11 @@ async function enableMocking(): Promise<void> {
 function renderApp(): void {
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      <QueryProvider>
-        <AppRouter />
-      </QueryProvider>
+      <ThemeProvider>
+        <QueryProvider>
+          <AppRouter />
+        </QueryProvider>
+      </ThemeProvider>
     </React.StrictMode>,
   );
 }

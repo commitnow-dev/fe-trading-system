@@ -1,4 +1,5 @@
 import { isOrderItem, ORDERBOOK_ENDPOINT, type OrderItem } from "@/entities/orderbook";
+import { apiClient } from "@/shared/api/client";
 
 interface OrderbookResponse {
   items: OrderItem[];
@@ -19,13 +20,12 @@ function isOrderbookResponse(value: unknown): value is OrderbookResponse {
 }
 
 export async function fetchOrderbook(): Promise<OrderItem[]> {
-  const response = await fetch(ORDERBOOK_ENDPOINT);
+  const { data } = await apiClient.GET(ORDERBOOK_ENDPOINT);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch orderbook: ${response.status}`);
+  if (!data) {
+    throw new Error("Failed to fetch orderbook");
   }
-
-  const payload: unknown = await response.json();
+  const payload: unknown = data;
 
   if (!isOrderbookResponse(payload)) {
     throw new Error("Invalid orderbook response");

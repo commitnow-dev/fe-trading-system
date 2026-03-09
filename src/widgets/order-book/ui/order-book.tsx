@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AllCommunityModule,
   ModuleRegistry,
@@ -10,6 +11,7 @@ import { AgGridReact } from "ag-grid-react";
 
 import type { OrderItem } from "@/entities/orderbook";
 import { formatNumber } from "@/shared/lib/number-format";
+import { UiSection } from "@/shared/ui/semantic";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -18,30 +20,28 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface OrderBookProps {
   items: OrderItem[];
-  onSelectPrice: (price: number) => void;
+  onSelectOrder: (item: OrderItem) => void;
 }
 
-function typeToLabel(type: OrderItem["type"]): string {
-  return type === "buy" ? "매수" : "매도";
-}
-
-export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElement {
+export function OrderBook({ items, onSelectOrder }: OrderBookProps): ReactElement {
+  const { t } = useTranslation();
   const columnDefs = useMemo<ColDef<OrderItem>[]>(
     () => [
       {
-        headerName: "유형",
+        headerName: t("orderBook.type"),
         field: "type",
         width: 120,
         minWidth: 120,
         maxWidth: 120,
-        valueFormatter: (params) => typeToLabel(params.value as OrderItem["type"]),
+        valueFormatter: (params) =>
+          params.value === "buy" ? t("orderBook.buy") : t("orderBook.sell"),
         cellClass: (params) =>
           params.data?.type === "buy"
             ? "orderbook-cell-type-buy"
             : "orderbook-cell-type-sell",
       },
       {
-        headerName: "가격",
+        headerName: t("orderBook.price"),
         field: "price",
         flex: 1,
         valueFormatter: (params) => formatNumber(Number(params.value ?? 0)),
@@ -51,7 +51,7 @@ export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElemen
             : "orderbook-cell-price-sell",
       },
       {
-        headerName: "잔량",
+        headerName: t("orderBook.quantity"),
         field: "quantity",
         width: 120,
         minWidth: 120,
@@ -59,7 +59,7 @@ export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElemen
         valueFormatter: (params) => formatNumber(Number(params.value ?? 0)),
       },
     ],
-    [],
+    [t],
   );
 
   const defaultColDef = useMemo<ColDef<OrderItem>>(
@@ -76,13 +76,13 @@ export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElemen
       return;
     }
 
-    onSelectPrice(event.data.price);
+    onSelectOrder(event.data);
   };
 
   return (
-    <section
+    <UiSection
       className="mx-auto flex h-full w-full max-w-[680px] flex-col overflow-hidden"
-      aria-label="실시간 호가창"
+      aria-label={t("orderBook.ariaLabel")}
     >
       <div className="ag-theme-quartz orderbook-grid-theme h-full w-full">
         <AgGridReact<OrderItem>
@@ -100,6 +100,6 @@ export function OrderBook({ items, onSelectPrice }: OrderBookProps): ReactElemen
           onRowClicked={handleRowClick}
         />
       </div>
-    </section>
+    </UiSection>
   );
 }

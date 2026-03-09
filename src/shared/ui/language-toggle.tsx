@@ -1,32 +1,32 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Theme } from "@/shared/model/stores/theme-store";
-import { useThemeStore } from "@/shared/model/stores/theme-store";
+const LANGUAGES = ["en", "kr"] as const;
 
-const THEMES: Theme[] = ["light", "dark", "system"];
-
-export function ThemeToggle(): ReactElement {
-  const { t } = useTranslation();
-  const theme = useThemeStore((state) => state.theme);
-  const setTheme = useThemeStore((state) => state.setTheme);
+export function LanguageToggle(): ReactElement {
+  const { t, i18n } = useTranslation();
+  const currentLanguage = (i18n.resolvedLanguage ?? i18n.language ?? "en").startsWith(
+    "kr",
+  )
+    ? "kr"
+    : "en";
 
   return (
     <div className="inline-flex items-center gap-1 rounded-sm border border-(--color-border-default) bg-(--color-bg-surface) p-1">
-      {THEMES.map((item) => (
+      {LANGUAGES.map((language) => (
         <button
-          key={item}
+          key={language}
           type="button"
           className={`cursor-pointer rounded-sm px-2 py-1 text-xs transition-colors ${
-            theme === item
+            currentLanguage === language
               ? "bg-(--color-cta) text-(--color-on-accent)"
               : "text-(--color-text-secondary) hover:bg-(--color-bg-page)"
           }`}
           onClick={() => {
-            setTheme(item);
+            void i18n.changeLanguage(language);
           }}
         >
-          {t(`theme.${item}`)}
+          {t(`language.${language}`)}
         </button>
       ))}
     </div>

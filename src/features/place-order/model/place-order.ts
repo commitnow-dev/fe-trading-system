@@ -14,7 +14,3 @@ export function createOrderResult(input: PlaceOrderInput): OrderResult {
     totalPrice: input.price * input.quantity,
   };
 }
-
-export function isValidQuantity(value: number): boolean {
-  return Number.isInteger(value) && value > 0;
-}

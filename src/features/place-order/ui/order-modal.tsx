@@ -1,44 +1,53 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useRef } from "react";
 import type { ReactElement } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import type { OrderType } from "@/entities/orderbook";
-import { formatNumber } from "@/shared/lib/number-format";
+import { UiDialog } from "@/shared/ui/semantic";
 
-import { createOrderResult, isValidQuantity } from "../model/place-order";
+import {
+  createOrderQuantitySchema,
+  type OrderQuantityFormValues,
+} from "../model/order-quantity-schema";
+import { createOrderResult } from "../model/place-order";
+import { OrderModalActions } from "./order-modal-actions";
+import { OrderModalHeader } from "./order-modal-header";
+import { OrderModalQuantityField } from "./order-modal-quantity-field";
 
 interface OrderModalProps {
   isOpen: boolean;
   price: number;
+  availableQuantity: number;
   onClose: () => void;
   onSubmit: (result: ReturnType<typeof createOrderResult>) => void;
-}
-
-type FormError = "EMPTY" | "NOT_INTEGER" | "INVALID";
-
-function toErrorMessage(error: FormError | null): string {
-  switch (error) {
-    case "EMPTY":
-      return "수량을 입력해 주세요.";
-    case "NOT_INTEGER":
-      return "수량은 정수여야 합니다.";
-    case "INVALID":
-      return "수량은 1 이상이어야 합니다.";
-    default:
-      return "";
-  }
 }
 
 export function OrderModal({
   isOpen,
   price,
+  availableQuantity,
   onClose,
   onSubmit,
 }: OrderModalProps): ReactElement {
-  const [quantityInput, setQuantityInput] = useState<string>("1");
-  const [error, setError] = useState<FormError | null>(null);
+  const { t } = useTranslation();
+  const orderQuantitySchema = createOrderQuantitySchema(t);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
-
-  const parsedQuantity = useMemo(() => Number(quantityInput), [quantityInput]);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<OrderQuantityFormValues>({
+    defaultValues: {
+      quantity: 1,
+    },
+    resolver: zodResolver(orderQuantitySchema),
+    mode: "onSubmit",
+  });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -59,7 +68,7 @@ export function OrderModal({
   }, [isOpen]);
 
   const handleDialogClose = (): void => {
-    setError(null);
+    reset({ quantity: 1 });
     onClose();
   };
 
@@ -67,38 +76,32 @@ export function OrderModal({
     dialogRef.current?.close();
   };
 
-  const submitOrder = (type: OrderType): void => {
-    if (quantityInput.trim().length === 0) {
-      setError("EMPTY");
+  const submitOrder = (type: OrderType, values: OrderQuantityFormValues): void => {
+    if (values.quantity > availableQuantity) {
+      setError("quantity", {
+        type: "manual",
+        message: t("orderModal.errors.exceed", { quantity: availableQuantity }),
+      });
       return;
     }
 
-    if (!Number.isInteger(parsedQuantity)) {
-      setError("NOT_INTEGER");
-      return;
-    }
-
-    if (!isValidQuantity(parsedQuantity)) {
-      setError("INVALID");
-      return;
-    }
+    clearErrors("quantity");
 
     const result = createOrderResult({
       type,
       price,
-      quantity: parsedQuantity,
+      quantity: values.quantity,
     });
 
-    setError(null);
     closeModal();
     onSubmit(result);
-    setQuantityInput("1");
+    reset({ quantity: 1 });
   };
 
   return (
-    <dialog
+    <UiDialog
       ref={dialogRef}
-      className="w-[min(92vw,360px)] rounded-md border-0 bg-(--color-bg-surface) p-5 shadow-[0_12px_30px_rgba(0,0,0,0.22)] backdrop:bg-(--color-overlay)"
+      className="fixed top-1/2 left-1/2 m-0 w-[min(92vw,360px)] -translate-x-1/2 -translate-y-1/2 rounded-md border-0 bg-(--color-bg-surface) p-5 shadow-[0_12px_30px_rgba(0,0,0,0.22)] backdrop:bg-(--color-overlay)"
       onClose={handleDialogClose}
       onCancel={(event) => {
         event.preventDefault();
@@ -110,53 +113,29 @@ export function OrderModal({
         }
       }}
     >
-      <h2 id="order-modal-title" className="m-0 mb-3 text-xl">
-        주문하기
-      </h2>
-      <p className="m-0 mb-4 text-(--color-text-secondary)">
-        선택 가격: {formatNumber(price)} KRW
-      </p>
+      <OrderModalHeader price={price} availableQuantity={availableQuantity} />
 
-      <label className="mb-2 block text-sm" htmlFor="order-quantity">
-        수량
-      </label>
-      <input
-        id="order-quantity"
-        className="w-full rounded-sm border border-(--color-border-default) p-2.5"
-        type="number"
-        min={1}
-        step={1}
-        value={quantityInput}
-        onChange={(event) => {
-          setQuantityInput(event.target.value);
+      <OrderModalQuantityField
+        register={register}
+        {...(errors.quantity?.message
+          ? {
+              errorMessage: errors.quantity.message,
+            }
+          : {})}
+      />
+
+      <OrderModalActions
+        onBuy={() => {
+          void handleSubmit((values) => {
+            submitOrder("buy", values);
+          })();
+        }}
+        onSell={() => {
+          void handleSubmit((values) => {
+            submitOrder("sell", values);
+          })();
         }}
       />
-      {error ? (
-        <p className="mt-2 mb-0 text-sm text-(--color-sell)" role="alert">
-          {toErrorMessage(error)}
-        </p>
-      ) : null}
-
-      <div className="mt-[18px] flex gap-2.5">
-        <button
-          type="button"
-          className="flex-1 cursor-pointer rounded-sm border-0 bg-(--color-buy) py-2.5 font-semibold text-(--color-on-accent)"
-          onClick={() => {
-            submitOrder("buy");
-          }}
-        >
-          매수
-        </button>
-        <button
-          type="button"
-          className="flex-1 cursor-pointer rounded-sm border-0 bg-(--color-sell) py-2.5 font-semibold text-(--color-on-accent)"
-          onClick={() => {
-            submitOrder("sell");
-          }}
-        >
-          매도
-        </button>
-      </div>
-    </dialog>
+    </UiDialog>
   );
 }

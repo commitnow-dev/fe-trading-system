@@ -6,10 +6,25 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "node_modules", "public/mockServiceWorker.js"],
+    ignores: [
+      "dist",
+      "node_modules",
+      "playwright-report",
+      "test-results",
+      "blob-report",
+      "public/mockServiceWorker.js",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ["*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
+    },
+  },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {

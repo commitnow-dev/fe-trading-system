@@ -16,6 +16,8 @@ interface UseOrderbookStreamResult {
   items: OrderItem[];
   isLoading: boolean;
   isError: boolean;
+  isFetching: boolean;
+  refetch: () => Promise<unknown>;
 }
 
 export function useOrderbookStream(): UseOrderbookStreamResult {
@@ -30,5 +32,7 @@ export function useOrderbookStream(): UseOrderbookStreamResult {
     items: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
+    isFetching: query.isFetching,
+    refetch: () => query.refetch(),
   };
 }
